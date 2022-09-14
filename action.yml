@@ -9,6 +9,10 @@ inputs:
     description: The passphrase for the secret key specified with `gpg-secret-key`, if any.
     required: false
     default: ""
+  commit-result:
+    description: Describes if the result should be committed and pushed back to the repository.
+    required: false
+    default: true
 runs:
   using: "composite"
   steps:
@@ -18,17 +22,22 @@ runs:
         python-version: '3.10'
 
     - name: Install ansible-sign
+      shell: bash
       run: pip install ansible-sign
 
     - name: Import GPG secret key
+      shell: bash
       run: echo "${{ inputs.gpg-secret-key }}" | gpg --import --no-tty --batch
 
     - name: Sign the repository
+      shell: bash
       run: ansible-sign project gpg-sign .
       env:
         ANSIBLE_SIGN_GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
 
     - name: Commit the result
+      if: ${{ fromJSON(inputs.commit-result) }}
+      shell: bash
       run: |
         git config --global user.name "ansible-sign GitHub Action"
         git config --global user.email "${{ github.actor }}@users.noreply.github.com"
